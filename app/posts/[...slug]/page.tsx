@@ -5,17 +5,17 @@ import { Metadata } from "next"
 import { Mdx } from "@/components/mdx-components"
 
 interface PostProps {
-  params: {
+  params: Promise<{
     slug: string[]
-  }
+  }>
 }
 
 async function getPostFromParams(params: PostProps["params"]) {
-  const slug = params?.slug?.join("/")
-  const post = allPosts.find((post) => post.slugAsParams === slug)
+  const {slug} = await params;
+  const post = allPosts.find((post) => post.slugAsParams === slug.join("/"));
 
   if (!post) {
-    null
+    return null
   }
 
   return post
@@ -36,7 +36,7 @@ export async function generateMetadata({
   }
 }
 
-export async function generateStaticParams(): Promise<PostProps["params"][]> {
+export async function generateStaticParams() {
   return allPosts.map((post) => ({
     slug: post.slugAsParams.split("/"),
   }))

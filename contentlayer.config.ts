@@ -1,7 +1,7 @@
-import { defineDocumentType, makeSource } from "contentlayer/source-files"
+import { ComputedFields, defineDocumentType, makeSource } from "contentlayer2/source-files"
 
-/** @type {import('contentlayer/source-files').ComputedFields} */
-const computedFields = {
+
+const computedFields: ComputedFields = {
   slug: {
     type: "string",
     resolve: (doc) => `/${doc._raw.flattenedPath}`,
@@ -10,7 +10,7 @@ const computedFields = {
     type: "string",
     resolve: (doc) => doc._raw.flattenedPath.split("/").slice(1).join("/"),
   },
-}
+} as const
 
 export const Page = defineDocumentType(() => ({
   name: "Page",
