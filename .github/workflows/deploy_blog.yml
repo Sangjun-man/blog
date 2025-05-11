@@ -1,0 +1,114 @@
+name: Blog Deploy
+
+permissions:
+  contents: write  # push 권한 추가
+
+on:
+  repository_dispatch:
+    types: [blog-content-updated]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH_HASH: ${{ github.event.client_payload.sha }}
+      POST_PATH: apps/blog/content/posts
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Add Deploy Keys
+        env:
+          BLOG_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          OBSIDIAN_SSH_KEY: ${{ secrets.OBSIDIAN_FETCH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          eval "$(ssh-agent -s)"
+          
+          # Blog 레포 키 설정
+          echo "$BLOG_SSH_KEY" > ~/.ssh/blog_deploy
+          chmod 600 ~/.ssh/blog_deploy
+          ssh-add ~/.ssh/blog_deploy
+          
+          # Obsidian 레포 키 설정
+          echo "$OBSIDIAN_SSH_KEY" > ~/.ssh/obsidian_fetch
+          chmod 600 ~/.ssh/obsidian_fetch
+          ssh-add ~/.ssh/obsidian_fetch
+          
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Fetch Blog Repository
+        run: |
+          mkdir -p ~/app/blog && cd ~/app/blog
+          git init
+          git remote add blog-repo git@github.com:Sangjun-man/blog.git
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/blog_deploy' git fetch blog-repo
+          git checkout main
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/blog_deploy' git pull blog-repo main
+
+      - name: Fetch Obsidian Repository
+        run: |
+          mkdir -p ~/app/obsidian && cd ~/app/obsidian
+          git init
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/obsidian_fetch' git remote add obsidian-repo git@github.com:Sangjun-man/obsidian.git
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/obsidian_fetch' git fetch obsidian-repo
+          git reset --hard ${{env.TARGET_BRANCH_HASH}}
+
+      - name: Move and Convert Blog Posts
+        run: |
+          # obsidian/blog의 모든 md 파일을 content/post로 이동하면서 확장자 변경
+          find $HOME/app/obsidian/obsidian/Blog -name "*.md" -type f | while read file; do
+            new_filename=$(basename "$file" .md).mdx
+            cp -f "$file" "$HOME/app/blog/${{env.POST_PATH}}/$new_filename"
+          done
+          
+          # 변경사항 확인
+          cd $HOME/app/blog && git status
+          
+          # POST_PATH 외의 변경사항 확인
+          if git diff --name-only | grep -v "^${{env.POST_PATH}}/"; then
+            echo "Error: Changes detected outside of ${{env.POST_PATH}} directory"
+            echo "Changed files:"
+            git diff --name-only | grep -v "^${{env.POST_PATH}}/"
+            exit 1
+          fi
+          
+          # POST_PATH 내 변경사항 확인
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+      - name: Commit and Push Changes
+        run: |
+          cd ~/app/blog
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add apps/blog/content/posts
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update blog content from Obsidian"
+            GIT_SSH_COMMAND='ssh -i ~/.ssh/blog_deploy' git push blog-repo main
+          fi
+
+      - name: Build and Deploy
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_PORT: ${{ secrets.OPENED_SSH_PORT }}
+          DEPLOY_COMMANDS: |
+            cd /app/blog
+            git checkout main
+            git reset --hard origin/main
+            pnpm i
+            pnpm build
+            pm2 restart blog
+        run: |
+          ssh -i ~/.ssh/blog_deploy \
+              -p "$SSH_PORT" \
+              -o StrictHostKeyChecking=no \
+              sangjunserver2@sangjun.world \
+              "bash -l -c '$DEPLOY_COMMANDS'"
+          rm -f ~/.ssh/blog_deploy
+
+
