@@ -90,6 +90,7 @@ jobs:
           SSH_PORT: ${{ secrets.OPENED_SSH_PORT }}
           DEPLOY_COMMANDS: |
             cd /app/blog
+            git fetch
             git checkout main
             git reset --hard origin/main
             pnpm i
