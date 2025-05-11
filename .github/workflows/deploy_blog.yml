@@ -65,14 +65,6 @@ jobs:
           # 변경사항 확인
           cd $HOME/app/blog && git status
           
-          # POST_PATH 외의 변경사항 확인
-          if git diff --name-only | grep -v "^${{env.POST_PATH}}/"; then
-            echo "Error: Changes detected outside of ${{env.POST_PATH}} directory"
-            echo "Changed files:"
-            git diff --name-only | grep -v "^${{env.POST_PATH}}/"
-            exit 1
-          fi
-          
           # POST_PATH 내 변경사항 확인
           if git diff --quiet; then
             echo "No changes to commit"
@@ -101,7 +93,7 @@ jobs:
             git checkout main
             git reset --hard origin/main
             pnpm i
-            pnpm build
+            pnpm --filter blog build
             pm2 restart blog
         run: |
           ssh -i ~/.ssh/blog_deploy \
