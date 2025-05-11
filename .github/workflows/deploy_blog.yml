@@ -1,0 +1,80 @@
+name: Blog Deploy
+
+permissions:
+  contents: read
+
+on:
+  repository_dispatch:
+    types: [blog-content-updated]
+
+jobs:
+  fetch_blog_articles:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
+      POST_PATH: apps/blog/content/posts
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Add Deploy Key
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/blog_deploy
+          chmod 600 ~/.ssh/blog_deploy
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Fetch Obsidian Repository
+        run: |
+          mkdir -p ./obsidian && cd ./obsidian
+          git init
+          git remote add obsidian-repo git@github.com:Sangjun-man/obsidian.git
+          git fetch obsidian-repo ${{env.TARGET_BRANCH}}
+          git checkout -b ${{env.TARGET_BRANCH}} || git checkout ${{env.TARGET_BRANCH}}
+          git reset --hard "obsidian-repo/${{env.TARGET_BRANCH}}"
+
+
+      - name: Fetch Blog Repository
+        run: |
+          cd ..
+          git remote add blog-repo git@github.com:Sangjun-man/blog.git
+          git fetch blog-repo ${{env.TARGET_BRANCH}}
+          git checkout -b ${{env.TARGET_BRANCH}} || git checkout ${{env.TARGET_BRANCH}}
+          git reset --hard "blog-repo/${{env.TARGET_BRANCH}}"
+
+      - name: Move and Convert Blog Posts
+        run: |
+          # content디렉토리 생성
+          mkdir -p ${{env.POST_PATH}}
+          
+          # obsidian/blog의 모든 md 파일을 content/post로 이동하면서 확장자 변경
+          find ./obsidian/obsidian/blog -name "*.md" -type f | while read file; do
+            # 파일명에서 확장자 제거 후 .mdx 추가
+            new_filename=$(basename "$file" .md).mdx
+            # content/post로 복사
+            cp "$file" "${{env.POST_PATH}}/$new_filename"
+          done
+          
+          # 이동된 파일 목록 출력
+          echo "Moved files:"
+          ls -la ${{env.POST_PATH}}/
+
+      - name: Build and Deploy
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_PORT: ${{ secrets.OPENED_SSH_PORT }}
+          DEPLOY_COMMANDS: |
+            cd /app/blog
+            pnpm build
+            pm2 restart blog
+        run: |
+          ssh -i ~/.ssh/blog_deploy \
+              -p "$SSH_PORT" \
+              -o StrictHostKeyChecking=no \
+              sangjunserver2@sangjun.world \
+              "$DEPLOY_COMMANDS"
+          rm -f ~/.ssh/blog_deploy
+
+
