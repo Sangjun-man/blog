@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  app/blog:
     dependencies:
       next:
         specifier: 15.3.2

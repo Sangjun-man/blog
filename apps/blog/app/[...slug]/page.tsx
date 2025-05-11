@@ -44,7 +44,6 @@ export async function generateStaticParams() {
 }
 
 export default async function PagePage({ params }:any) {
-  console.log(params)
   const page = await getPageFromParams(params)
 
   if (!page) {
