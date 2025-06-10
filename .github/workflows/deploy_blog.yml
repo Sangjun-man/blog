@@ -56,12 +56,14 @@ jobs:
 
       - name: Move and Convert Blog Posts
         run: |
-        
+          # 경로 변수 설정
+          BLOG_POSTS_DIR="$HOME/app/blog/apps/blog/content/posts"
+
           # content/post 디렉토리 비우기
-          if [ -d ~/app/blog/${{env.POST_PATH}} ]; then
-              rm -rf ~/app/blog/${{env.POST_PATH}}/*
+          if [ -d "$BLOG_POSTS_DIR" ]; then
+              rm -rf "$BLOG_POSTS_DIR"/*
           else
-              mkdir -p ~/app/blog/${{env.POST_PATH}}
+              mkdir -p "$BLOG_POSTS_DIR"
           fi
 
           # obsidian/blog의 모든 md 파일을 content/post로 이동하면서 확장자 변경
@@ -69,18 +71,15 @@ jobs:
             # MDX 파일에서 frontmatter 내의 title 추출
             title=$(sed -n '/^---$/,/^---$/p' "$file" | grep "^title:" | sed 's/^title: *//' | tr -d '"' | tr -d "'")
 
-
             # title이 있는 경우에만 파일 복사
             if [ -n "$title" ]; then
                 # title을 URL 인코딩 (Node.js 사용)
                 encoded_title=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$title")
                 new_filename="${encoded_title}.mdx"
+                cp -f "$file" "$BLOG_POSTS_DIR/$new_filename"
             else
-
                 echo "ERROR: No title found in frontmatter for file: $file"
-                continue
             fi
-            cp -f "$file" "~/app/blog/${{env.POST_PATH}}/$new_filename"
           done
           
           # 변경사항 확인
