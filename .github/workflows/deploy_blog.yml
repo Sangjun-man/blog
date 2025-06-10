@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           eval "$(ssh-agent -s)"
-          
+           
           # Blog 레포 키 설정
           echo "$BLOG_SSH_KEY" > ~/.ssh/blog_deploy
           chmod 600 ~/.ssh/blog_deploy
@@ -56,14 +56,38 @@ jobs:
 
       - name: Move and Convert Blog Posts
         run: |
+        
+          # content/post 디렉토리 비우기
+          if [ -d ~/app/blog/${{env.POST_PATH}} ]; then
+              rm -rf ~/app/blog/${{env.POST_PATH}}/*
+          else
+              mkdir -p ~/app/blog/${{env.POST_PATH}}
+          fi
+
           # obsidian/blog의 모든 md 파일을 content/post로 이동하면서 확장자 변경
-          find $HOME/app/obsidian/obsidian/Blog -name "*.md" -type f | while read file; do
+          find ~/app/obsidian/obsidian/Blog -name "*.md" -type f | while read file; do
+<<<<<<< Updated upstream
             new_filename=$(basename "$file" .md).mdx
-            cp -f "$file" "$HOME/app/blog/${{env.POST_PATH}}/$new_filename"
+=======
+            # MDX 파일에서 frontmatter 내의 title 추출
+            title=$(sed -n '/^---$/,/^---$/p' "$file" | grep "^title:" | sed 's/^title: *//' | tr -d '"' | tr -d "'")
+
+            # title이 있는 경우에만 파일 복사
+            if [ -n "$title" ]; then
+                # title을 URL 인코딩 (Node.js 사용)
+                encoded_title=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$title")
+                new_filename="${encoded_title}.mdx"
+            else
+
+                echo "ERROR: No title found in frontmatter for file: $file"
+                continue
+            fi
+>>>>>>> Stashed changes
+            cp -f "$file" "~/app/blog/${{env.POST_PATH}}/$new_filename"
           done
           
           # 변경사항 확인
-          cd $HOME/app/blog && git status
+          cd ~/app/blog && git status
           
           # POST_PATH 내 변경사항 확인
           if git diff --quiet; then
