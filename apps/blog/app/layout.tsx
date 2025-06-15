@@ -22,9 +22,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SiteHeader />
-          <div className="max-w-2xl mx-auto py-10 px-4">
-            <main>{children}</main>
-          </div>
+          <main className="w-full px-4 md:px-8 pt-14 pb-10">{children}</main>
         </ThemeProvider>
       </body>
     </html>

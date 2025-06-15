@@ -3,12 +3,6 @@ import { Metadata } from 'next'
 import { allPages } from 'contentlayer/generated'
 
 import { Mdx } from '@/components/mdx-components'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Typography } from '@/components/ui/typography'
 
 interface PageProps {
@@ -56,15 +50,12 @@ export default async function PagePage({ params }: any) {
   }
 
   return (
-    <Card className="mx-auto my-8 max-w-3xl p-8">
-      <CardHeader>
+    <div className="flex-1 overflow-y-auto px-4 md:px-8">
+      <article className="prose dark:prose-invert mx-auto py-10">
         <Typography.H1>{page.title}</Typography.H1>
         {page.description && <Typography.Lead>{page.description}</Typography.Lead>}
-      </CardHeader>
-      <Separator />
-      <CardContent className="prose dark:prose-invert">
         <Mdx code={page.body.code} />
-      </CardContent>
-    </Card>
+      </article>
+    </div>
   )
 }

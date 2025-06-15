@@ -1,18 +1,17 @@
 import { allPosts } from '@/.contentlayer/generated'
-import Link from 'next/link'
-import { Typography } from '@/components/ui/typography'
+import { ArticleList } from '@/components/article-list'
 
 export default function Home() {
+  const articles = allPosts.map((post) => ({
+    title: post.title,
+    description: post.description,
+    date: post.date,
+    slug: post.slugAsParams,
+  }))
+
   return (
-    <div className="prose dark:prose-invert">
-      {allPosts.map((post) => (
-        <article key={post._id}>
-          <Link href={post.slug}>
-            <Typography.H2 className="mt-0">{post.title}</Typography.H2>
-          </Link>
-          {post.description && <Typography.P>{post.description}</Typography.P>}
-        </article>
-      ))}
+    <div className="mt-10">
+      <ArticleList articles={articles} />
     </div>
   )
 }
