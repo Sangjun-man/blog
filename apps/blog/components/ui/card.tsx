@@ -7,7 +7,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={clsx(
-        'rounded-xl border bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 shadow-sm',
+        'rounded-xl border bg-surface text-foreground shadow-sm',
         className,
       )}
       {...props}
@@ -35,7 +35,7 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={clsx('text-sm text-gray-500 dark:text-gray-400', className)} {...props} />
+  <p ref={ref} className={clsx('text-sm text-muted', className)} {...props} />
 ))
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

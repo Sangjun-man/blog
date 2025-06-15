@@ -18,3 +18,48 @@ color utility to any element that depends on these defaults.
     border-color: var(--color-gray-200, currentColor);
   }
 }
+
+/* ---------------- GitHub Light / Dark Design Tokens ---------------- */
+
+:root {
+  /* radius */
+  --radius: 0.375rem;
+
+  /* Light mode palette (GitHub Light) */
+  --background: 0 0% 100%;          /* #ffffff */
+  --surface: 213 25% 97%;           /* #f6f8fa */
+  --overlay: 212 20% 94%;           /* #eaeef2 */
+  --border: 210 14% 86%;            /* #d0d7de */
+
+  --foreground: 213 13% 19%;        /* #24292f */
+  --muted: 210 8% 45%;              /* #6e7781 */
+  --disabled: 210 8% 70%;           /* #afb8c1 */
+
+  --primary: 212 92% 44%;           /* #0969da */
+  --primary-foreground: 0 0% 100%;  /* #ffffff */
+
+  --success: 144 65% 30%;           /* #1a7f37 */
+  --warning: 43 100% 37%;           /* #bf8700 */
+  --danger: 353 74% 47%;            /* #cf222e */
+}
+
+.dark {
+  /* GitHub Dark Default palette */
+  --background: 212 28% 8%;         /* #0d1117 */
+  --surface: 212 26% 11%;           /* #161b22 */
+  --overlay: 213 18% 14%;           /* #1f2428 */
+  --border: 215 14% 25%;            /* #30363d */
+
+  --foreground: 210 15% 88%;        /* #c9d1d9 */
+  --muted: 213 10% 59%;             /* #8b949e */
+  --disabled: 210 9% 40%;           /* #6e7681 */
+
+  --primary: 213 89% 57%;           /* #2f81f7 */
+  --primary-foreground: 0 0% 100%;  /* #ffffff */
+
+  --success: 135 57% 50%;           /* #3fb950 */
+  --warning: 43 69% 47%;            /* #d29922 */
+  --danger: 4 90% 63%;              /* #f85149 */
+}
+
+/* ------------------------------------------------------------------- */

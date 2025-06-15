@@ -6,8 +6,7 @@ export function SiteHeader() {
   return (
     <header
       className={clsx(
-        'sticky top-0 z-40 w-full border-b border-slate-200/60 bg-white/75 backdrop-blur-sm flex items-center justify-between',
-        'dark:border-slate-800/60 dark:bg-slate-950/75',
+        'sticky top-0 z-40 w-full border-b border-border/60 bg-background/75 backdrop-blur-sm flex items-center justify-between',
       )}
     >
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4">

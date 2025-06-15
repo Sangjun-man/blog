@@ -3,8 +3,9 @@ import { allPosts } from 'contentlayer/generated'
 
 import { Metadata } from 'next'
 import { Mdx } from '@/components/mdx-components'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Typography } from '@/components/ui/typography'
 
 interface PostProps {
   params: Promise<{
@@ -52,8 +53,8 @@ export default async function PostPage({ params }: PostProps) {
   return (
     <Card className="mx-auto my-8 max-w-3xl p-8">
       <CardHeader>
-        <CardTitle>{post.title}</CardTitle>
-        {post.description && <CardDescription>{post.description}</CardDescription>}
+        <Typography.H1>{post.title}</Typography.H1>
+        {post.description && <Typography.Lead>{post.description}</Typography.Lead>}
       </CardHeader>
       <Separator />
       <CardContent className="prose dark:prose-invert">
