@@ -6,6 +6,8 @@ permissions:
 on:
   repository_dispatch:
     types: [blog-content-updated]
+  push:
+    branches: [ main ]
 
 jobs:
   sync:
@@ -47,6 +49,7 @@ jobs:
           GIT_SSH_COMMAND='ssh -i ~/.ssh/blog_deploy' git pull blog-repo main
 
       - name: Fetch Obsidian Repository
+        if: github.event_name == 'repository_dispatch'
         run: |
           mkdir -p ~/app/obsidian && cd ~/app/obsidian
           git init
@@ -55,6 +58,7 @@ jobs:
           git reset --hard ${{env.TARGET_BRANCH_HASH}}
 
       - name: Move and Convert Blog Posts
+        if: github.event_name == 'repository_dispatch'
         run: |
           # 경로 변수 설정
           BLOG_POSTS_DIR="$HOME/app/blog/apps/blog/content/posts"
@@ -92,6 +96,7 @@ jobs:
           fi
 
       - name: Commit and Push Changes
+        if: github.event_name == 'repository_dispatch'
         run: |
           cd ~/app/blog
           git config --global user.name "GitHub Actions"
@@ -108,6 +113,8 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SSH_PORT: ${{ secrets.OPENED_SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
           DEPLOY_COMMANDS: |
             cd /app/blog
             git fetch
@@ -120,7 +127,7 @@ jobs:
           ssh -i ~/.ssh/blog_deploy \
               -p "$SSH_PORT" \
               -o StrictHostKeyChecking=no \
-              sangjunserver2@sangjun.world \
+              "${SSH_USER}@${SSH_HOST}" \
               "bash -l -c '$DEPLOY_COMMANDS'"
           rm -f ~/.ssh/blog_deploy
 
