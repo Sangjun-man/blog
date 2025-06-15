@@ -10,7 +10,7 @@ on:
     branches: [ main ]
 
 jobs:
-  sync:
+  sync:   
     runs-on: ubuntu-latest
     env:
       TARGET_BRANCH_HASH: ${{ github.event.client_payload.sha }}

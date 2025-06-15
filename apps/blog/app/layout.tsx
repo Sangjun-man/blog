@@ -17,9 +17,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`antialiased min-h-screen bg-background text-foreground ${inter.className}`}
-      >
+      <body className={`antialiased min-h-screen bg-background text-foreground ${inter.className}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SiteHeader />
           <main className="w-full px-4 md:px-8 pt-14 pb-10">{children}</main>

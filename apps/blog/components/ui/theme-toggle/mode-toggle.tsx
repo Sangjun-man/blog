@@ -1,7 +1,8 @@
-"use client"
+'use client'
 
 import { useTheme } from 'next-themes'
-import {useState, useEffect} from "react"
+import { useEffect } from 'react'
+import { useState } from 'react'
 
 export default function ModeToggle() {
   const { setTheme, resolvedTheme } = useTheme()
@@ -55,4 +56,4 @@ export default function ModeToggle() {
       </svg>
     </button>
   )
-} 
+}

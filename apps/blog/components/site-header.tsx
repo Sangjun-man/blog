@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import clsx from 'clsx'
-import  ModeToggle from "@/components/ui/theme-toggle/mode-toggle"
+import ModeToggle from '@/components/ui/theme-toggle/mode-toggle'
 
 export function SiteHeader() {
   return (
