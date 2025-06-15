@@ -1,8 +1,10 @@
-import { notFound } from "next/navigation"
-import { allPosts } from "contentlayer/generated"
+import { notFound } from 'next/navigation'
+import { allPosts } from 'contentlayer/generated'
 
-import { Metadata } from "next"
-import { Mdx } from "@/components/mdx-components"
+import { Metadata } from 'next'
+import { Mdx } from '@/components/mdx-components'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
 interface PostProps {
   params: Promise<{
@@ -10,9 +12,9 @@ interface PostProps {
   }>
 }
 
-async function getPostFromParams(params: PostProps["params"]) {
-  const {slug} = await params;
-  const post = allPosts.find((post) => post.slugAsParams === slug.join("/"));
+async function getPostFromParams(params: PostProps['params']) {
+  const { slug } = await params
+  const post = allPosts.find((post) => post.slugAsParams === slug.join('/'))
 
   if (!post) {
     return null
@@ -21,9 +23,7 @@ async function getPostFromParams(params: PostProps["params"]) {
   return post
 }
 
-export async function generateMetadata({
-  params,
-}: PostProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PostProps): Promise<Metadata> {
   const post = await getPostFromParams(params)
 
   if (!post) {
@@ -38,7 +38,7 @@ export async function generateMetadata({
 
 export async function generateStaticParams() {
   return allPosts.map((post) => ({
-    slug: post.slugAsParams.split("/"),
+    slug: post.slugAsParams.split('/'),
   }))
 }
 
@@ -50,15 +50,15 @@ export default async function PostPage({ params }: PostProps) {
   }
 
   return (
-    <article className="py-6 prose dark:prose-invert">
-      <h1 className="mb-2">{post.title}</h1>
-      {post.description && (
-        <p className="text-xl mt-0 text-slate-700 dark:text-slate-200">
-          {post.description}
-        </p>
-      )}
-      <hr className="my-4" />
-      <Mdx code={post.body.code} />
-    </article>
+    <Card className="mx-auto my-8 max-w-3xl p-8">
+      <CardHeader>
+        <CardTitle>{post.title}</CardTitle>
+        {post.description && <CardDescription>{post.description}</CardDescription>}
+      </CardHeader>
+      <Separator />
+      <CardContent className="prose dark:prose-invert">
+        <Mdx code={post.body.code} />
+      </CardContent>
+    </Card>
   )
 }

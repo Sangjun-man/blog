@@ -1,9 +1,9 @@
-const { withContentlayer } = require("next-contentlayer2");
+const { withContentlayer } = require('next-contentlayer2')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath:"/blog",
+  basePath: '/blog',
   reactStrictMode: true,
-};
+}
 
-module.exports = withContentlayer(nextConfig);
+module.exports = withContentlayer(nextConfig)
