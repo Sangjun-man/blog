@@ -23,9 +23,7 @@ export default function PostsLayout({ children }: { children: React.ReactNode })
           ⟩
         </button>
       )}
-      <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-14 pb-10 md:pl-64">
-        {children}
-      </main>
+      <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-14 pb-10 md:pl-64">{children}</main>
     </div>
   )
-} 
+}

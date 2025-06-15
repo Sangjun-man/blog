@@ -53,4 +53,4 @@ export function Sidebar({ open, onToggle, widthClass = 'w-64' }: SidebarProps) {
       )}
     </aside>
   )
-} 
+}

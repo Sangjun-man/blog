@@ -18,16 +18,17 @@ export function ArticleList({ articles }: ArticleListProps) {
   return (
     <ul className="space-y-8">
       {articles.map((article) => (
-        <li key={article.slug} className="border-b border-border pb-8 px-2 md:px-0 last:border-0 last:pb-0">
+        <li
+          key={article.slug}
+          className="border-b border-border pb-8 px-2 md:px-0 last:border-0 last:pb-0"
+        >
           <article>
             <h2 className="mb-2 text-2xl md:text-3xl font-bold tracking-tight">
               <Link href={`/posts/${article.slug}`} className="hover:underline">
                 {article.title}
               </Link>
             </h2>
-            {article.description && (
-              <p className="text-muted mb-1">{article.description}</p>
-            )}
+            {article.description && <p className="text-muted mb-1">{article.description}</p>}
             {article.date && (
               <time className="text-xs text-muted" dateTime={article.date}>
                 {dayjs(article.date).format('YYYY.MM.DD')}
@@ -38,4 +39,4 @@ export function ArticleList({ articles }: ArticleListProps) {
       ))}
     </ul>
   )
-} 
+}

@@ -1,15 +1,11 @@
 import * as React from 'react'
-
 import clsx from 'clsx'
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={clsx(
-        'rounded-xl border bg-surface text-foreground shadow-sm',
-        className,
-      )}
+      className={clsx('rounded-xl border bg-surface text-foreground shadow-sm', className)}
       {...props}
     />
   ),
@@ -43,7 +39,6 @@ const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
     <div ref={ref} className={clsx('p-6 pt-0', className)} {...props} />
   ),
 )
-CardContent.displayName = 'CardContent'
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (

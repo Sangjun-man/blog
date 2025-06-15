@@ -2,19 +2,12 @@ import * as React from 'react'
 import clsx from 'clsx'
 import type { ElementType, ComponentPropsWithoutRef } from 'react'
 
-function createComponent<Tag extends ElementType>(
-  Comp: Tag,
-  defaultClasses: string,
-) {
-  return React.forwardRef<any, ComponentPropsWithoutRef<Tag>>( (
-    { className, ...props },
-    ref,
-  ) => {
+function createComponent<Tag extends ElementType>(Comp: Tag, defaultClasses: string) {
+  return React.forwardRef<any, ComponentPropsWithoutRef<Tag>>(({ className, ...props }, ref) => {
     // @ts-ignore
     return <Comp ref={ref} className={clsx(defaultClasses, className)} {...props} />
   })
 }
-
 
 const baseHeading = 'scroll-m-20 font-extrabold tracking-tight text-foreground'
 
@@ -30,4 +23,4 @@ export const Typography = {
   Lead: createComponent('p', 'text-xl text-muted'),
   Small: createComponent('small', 'text-sm font-medium leading-none'),
   Muted: createComponent('p', 'text-sm text-muted'),
-} as const 
+} as const
