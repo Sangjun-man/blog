@@ -1,0 +1,166 @@
+name: Blog CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: Target environment for GitOps dispatch
+        required: true
+        type: choice
+        options:
+          - development
+        default: development
+
+permissions:
+  contents: read
+  pull-requests: read
+  packages: write
+
+concurrency:
+  group: ci-blog-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build:
+    name: Lint + Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node and Dependencies
+        uses: Sangjun-man/kubernates/.github/actions/setup-node@4221b5f1fcccb515af8c328f68bb4d57c82fd01f
+
+      - name: Run lint
+        run: pnpm --filter blog lint
+
+      - name: Build static target
+        run: pnpm --filter blog run build:static
+
+      - name: Build server target
+        run: pnpm --filter blog run build:server
+
+  docker-build-push:
+    name: Build & Push Blog Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint-build]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    outputs:
+      blog-image: ${{ steps.blog-image-ref.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e8 # v3.6.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lowercase repo name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata
+        id: meta-blog
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ steps.repo.outputs.name }}/blog-static
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-,suffix=-{{date 'YYYYMMDD-HHmmss'}}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push static image
+        id: build-blog
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: static
+          push: true
+          tags: ${{ steps.meta-blog.outputs.tags }}
+          labels: ${{ steps.meta-blog.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Expose immutable blog image ref
+        id: blog-image-ref
+        run: echo "image=ghcr.io/${{ steps.repo.outputs.name }}/blog-static@${{ steps.build-blog.outputs.digest }}" >> "$GITHUB_OUTPUT"
+
+  trigger-gitops:
+    name: Trigger K3s GitOps Update
+    runs-on: ubuntu-latest
+    needs: [docker-build-push]
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.docker-build-push.outputs.blog-image != ''
+    steps:
+      - name: Resolve target environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ inputs.deploy_environment }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=development" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger kubernates update-blog-image workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITOPS_PAT }}
+          script: |
+            const environment = '${{ steps.env.outputs.environment }}';
+            const image = '${{ needs.docker-build-push.outputs.blog-image }}';
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'Sangjun-man',
+              repo: 'kubernates',
+              workflow_id: 'update-blog-image.yml',
+              ref: 'main',
+              inputs: {
+                environment,
+                'blog-image': image,
+              },
+            });
+
+            console.log(`Triggered kubernates/update-blog-image.yml for ${environment}`);
+            console.log(`Blog image: ${image}`);
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [lint-build, docker-build-push, trigger-gitops]
+    if: always()
+    steps:
+      - name: Validate pipeline status
+        run: |
+          if [[ "${{ needs.lint-build.result }}" != "success" ]]; then
+            echo "Lint/Build failed"
+            exit 1
+          fi
+
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            if [[ "${{ needs.docker-build-push.result }}" != "success" ]]; then
+              echo "Docker build/push failed"
+              exit 1
+            fi
+            if [[ "${{ needs.trigger-gitops.result }}" != "success" ]]; then
+              echo "GitOps trigger failed"
+              exit 1
+            fi
+          fi
+
+          echo "Quality gate passed"
