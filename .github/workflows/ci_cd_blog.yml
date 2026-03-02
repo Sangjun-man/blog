@@ -117,11 +117,20 @@ jobs:
     needs: [docker-build-push]
     if: |
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      needs.docker-build-push.outputs.blog-image != '' &&
-      secrets.GITOPS_PAT != ''
+      needs.docker-build-push.outputs.blog-image != ''
     steps:
+      - name: Check GITOPS_PAT availability
+        id: guard
+        run: |
+          if [[ -z "${{ secrets.GITOPS_PAT }}" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Resolve target environment
         id: env
+        if: steps.guard.outputs.skip != 'true'
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "environment=${{ inputs.deploy_environment }}" >> "$GITHUB_OUTPUT"
@@ -130,6 +139,7 @@ jobs:
           fi
 
       - name: Trigger kubernates update-blog-image workflow
+        if: steps.guard.outputs.skip != 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITOPS_PAT }}
@@ -151,6 +161,10 @@ jobs:
             console.log(`Triggered kubernates/update-blog-image.yml for ${environment}`);
             console.log(`Blog image: ${image}`);
 
+      - name: Skip GitOps trigger (missing PAT)
+        if: steps.guard.outputs.skip == 'true'
+        run: echo "GITOPS_PAT missing; skipping dispatch step."
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
@@ -158,8 +172,6 @@ jobs:
     if: always()
     steps:
       - name: Validate pipeline status
-        env:
-          HAS_GITOPS_PAT: ${{ secrets.GITOPS_PAT != '' }}
         run: |
           if [[ "${{ needs.lint-build.result }}" != "success" ]]; then
             echo "Lint/Build failed"
@@ -171,13 +183,9 @@ jobs:
               echo "Docker build/push failed"
               exit 1
             fi
-            if [[ "${HAS_GITOPS_PAT}" == "true" ]]; then
-              if [[ "${{ needs.trigger-gitops.result }}" != "success" ]]; then
-                echo "GitOps trigger failed"
-                exit 1
-              fi
-            else
-              echo "GITOPS_PAT missing, skipping GitOps trigger gate"
+            if [[ "${{ needs.trigger-gitops.result }}" != "success" ]]; then
+              echo "GitOps trigger failed"
+              exit 1
             fi
           fi
 
