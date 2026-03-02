@@ -32,8 +32,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Setup Node and Dependencies
-        uses: Sangjun-man/kubernates/.github/actions/setup-node@4221b5f1fcccb515af8c328f68bb4d57c82fd01f
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run lint
         run: pnpm --filter blog lint
@@ -106,7 +117,8 @@ jobs:
     needs: [docker-build-push]
     if: |
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      needs.docker-build-push.outputs.blog-image != ''
+      needs.docker-build-push.outputs.blog-image != '' &&
+      secrets.GITOPS_PAT != ''
     steps:
       - name: Resolve target environment
         id: env
@@ -146,6 +158,8 @@ jobs:
     if: always()
     steps:
       - name: Validate pipeline status
+        env:
+          HAS_GITOPS_PAT: ${{ secrets.GITOPS_PAT != '' }}
         run: |
           if [[ "${{ needs.lint-build.result }}" != "success" ]]; then
             echo "Lint/Build failed"
@@ -157,9 +171,13 @@ jobs:
               echo "Docker build/push failed"
               exit 1
             fi
-            if [[ "${{ needs.trigger-gitops.result }}" != "success" ]]; then
-              echo "GitOps trigger failed"
-              exit 1
+            if [[ "${HAS_GITOPS_PAT}" == "true" ]]; then
+              if [[ "${{ needs.trigger-gitops.result }}" != "success" ]]; then
+                echo "GitOps trigger failed"
+                exit 1
+              fi
+            else
+              echo "GITOPS_PAT missing, skipping GitOps trigger gate"
             fi
           fi
 
