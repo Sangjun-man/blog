@@ -57,8 +57,22 @@ jobs:
             title=$(sed -n '/^---$/,/^---$/p' "$file" | grep "^title:" | sed 's/^title: *//' | tr -d '"' | tr -d "'")
 
             if [[ -n "$title" ]]; then
-              encoded_title=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$title")
-              cp -f "$file" "$TMP_POSTS_DIR/${encoded_title}.mdx"
+              slug=$(node -e '
+                const title = (process.argv[1] ?? "").normalize("NFC").trim();
+                const slug = title
+                  .replace(/[/?#%]/g, "")
+                  .replace(/\s+/g, "-")
+                  .replace(/-+/g, "-")
+                  .replace(/^-|-$/g, "");
+                process.stdout.write(slug || "post");
+              ' "$title")
+
+              if [[ -e "$TMP_POSTS_DIR/${slug}.mdx" ]]; then
+                suffix=$(printf "%s" "$file" | shasum -a 1 | cut -c1-8)
+                slug="${slug}-${suffix}"
+              fi
+
+              cp -f "$file" "$TMP_POSTS_DIR/${slug}.mdx"
               copied_count=$((copied_count + 1))
             else
               echo "::error::No title found in frontmatter for file: $file"

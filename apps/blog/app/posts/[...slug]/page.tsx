@@ -11,9 +11,20 @@ interface PostProps {
   }>
 }
 
+function safeDecodeURIComponent(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 async function getPostFromParams(params: PostProps['params']) {
   const { slug } = await params
-  const post = allPosts.find((post) => post.slugAsParams === slug.join('/'))
+  const joinedSlug = slug.join('/')
+  const normalizedSlug = safeDecodeURIComponent(joinedSlug)
+
+  const post = allPosts.find((post) => post.slugAsParams === normalizedSlug)
 
   if (!post) {
     return null

@@ -1,5 +1,15 @@
 import { ComputedFields, defineDocumentType, makeSource } from 'contentlayer2/source-files'
 
+function toPostSlug(input: string) {
+  const decoded = decodeURIComponent(input).normalize('NFC')
+
+  return decoded
+    .replace(/[/?#%]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 const computedFields: ComputedFields = {
   slug: {
     type: 'string',
@@ -7,7 +17,7 @@ const computedFields: ComputedFields = {
   },
   slugAsParams: {
     type: 'string',
-    resolve: (doc) => doc._raw.flattenedPath.split('/').slice(1).join('/'),
+    resolve: (doc) => toPostSlug(doc._raw.flattenedPath.split('/').slice(1).join('/')),
   },
 } as const
 
